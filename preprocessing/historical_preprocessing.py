@@ -3,22 +3,6 @@ import numpy as np
 import pickle
 
 
-def get_prev_k_season(season, k):
-    data = season.split("/")
-    return f'{int(data[0]) - k}/{int(data[1]) - k}'
-
-
-@db_session
-def get_league_season_teams(league_name, season):
-    home_teams = list(select(m.home_team for m in Match if m.league.name == league_name and (
-                m.season == season or m.season == get_prev_k_season(season, 1) or m.season == get_prev_k_season(season,
-                                                                                                                2))))
-    away_teams = list(select(m.away_team for m in Match if m.league.name == league_name and (
-                m.season == season or m.season == get_prev_k_season(season, 1) or m.season == get_prev_k_season(season,
-                                                                                                                2))))
-    return list(set(home_teams + away_teams))
-
-
 @db_session
 def extract_season_historical_matches():
     seasons_historical_matches = {}
