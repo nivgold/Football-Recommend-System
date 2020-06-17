@@ -1,7 +1,6 @@
-from ORM import *
+from preprocessing.ORM import *
 import numpy as np
 import pickle
-import os
 
 
 def get_prev_k_season(season, k):
@@ -120,10 +119,10 @@ def main():
 
     league_teams_season_historical = make_teams_historical(leagues, seasons_historical_matches_global)
 
-    with open('files/league_historical.pickle', 'wb') as league_historical_file:
+    with open('../files/league_historical.pickle', 'wb') as league_historical_file:
         pickle.dump(league_season_historical, league_historical_file, protocol=pickle.HIGHEST_PROTOCOL)
 
-    with open('files/team_historical.pickle', 'wb') as team_historical_file:
+    with open('../files/team_historical.pickle', 'wb') as team_historical_file:
         pickle.dump(league_teams_season_historical, team_historical_file, protocol=pickle.HIGHEST_PROTOCOL)
 
 

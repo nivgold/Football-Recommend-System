@@ -1,4 +1,4 @@
-from ORM import *
+from preprocessing.ORM import *
 from collections import defaultdict
 import numpy as np
 import pickle
@@ -62,7 +62,7 @@ def calculate_current_form_features(team, last_matches):
 
 def main():
     all_matches_current_form = make_current_form()
-    with open('files/current_form.pickle', 'wb') as current_form_file:
+    with open('../files/current_form.pickle', 'wb') as current_form_file:
         pickle.dump(all_matches_current_form, current_form_file, protocol=pickle.HIGHEST_PROTOCOL)
 
 if __name__ == '__main__':
