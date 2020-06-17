@@ -11,11 +11,11 @@ def get_prev_k_season(season, k):
 @db_session
 def get_league_season_teams(league_name, season):
     home_teams = list(select(m.home_team for m in Match if m.league.name == league_name and (
-                m.season == season or m.season == get_prev_k_season(season, 1) or m.season == get_prev_k_season(season,
-                                                                                                                2))))
+            m.season == season or m.season == get_prev_k_season(season, 1) or m.season == get_prev_k_season(season,
+                                                                                                            2))))
     away_teams = list(select(m.away_team for m in Match if m.league.name == league_name and (
-                m.season == season or m.season == get_prev_k_season(season, 1) or m.season == get_prev_k_season(season,
-                                                                                                                2))))
+            m.season == season or m.season == get_prev_k_season(season, 1) or m.season == get_prev_k_season(season,
+                                                                                                            2))))
     return list(set(home_teams + away_teams))
 
 
@@ -64,8 +64,8 @@ def make_teams_historical(leagues, season_historical_matches):
             league_season_teams = get_league_season_teams(l_name, season)
             for team in league_season_teams:
                 league_season_team_agg[(l_name, team, season)] = [match for match in matches if (
-                            (Match[match.id].league.name == l_name) and (
-                                Match[match.id].home_team == team or Match[match.id].away_team == team))]
+                        (Match[match.id].league.name == l_name) and (
+                        Match[match.id].home_team == team or Match[match.id].away_team == team))]
 
     for (league_name, team, season), matches in league_season_team_agg.items():
         total_games = len(matches)
@@ -96,15 +96,84 @@ def make_teams_historical(leagues, season_historical_matches):
                 [match.away_team_goal for match in matches if Match[match.id].home_team == team])
             std_away_lose_goal = np.std(
                 [match.home_team_goal for match in matches if Match[match.id].away_team == team])
-            teams_historical[(league_name, team.team_id, season)] = [home_win_per, away_win_per, home_draw_per, away_draw_per,
-                                                             avg_home_win_goal, avg_away_win_goal, avg_home_lose_goal,
-                                                             avg_away_lose_goal, std_home_win_goal, std_away_win_goal,
-                                                             std_home_lose_goal, std_away_lose_goal]
+            teams_historical[(league_name, team.team_id, season)] = [home_win_per, away_win_per, home_draw_per,
+                                                                     away_draw_per,
+                                                                     avg_home_win_goal, avg_away_win_goal,
+                                                                     avg_home_lose_goal,
+                                                                     avg_away_lose_goal, std_home_win_goal,
+                                                                     std_away_win_goal,
+                                                                     std_home_lose_goal, std_away_lose_goal]
         else:
             print(f'{team.name} DIVISION BY ZERO')
             teams_historical[(league_name, team.team_id, season)] = np.empty((12))
             teams_historical[(league_name, team.team_id, season)][:] = np.nan
     return teams_historical
+
+
+@db_session
+def make_teams_historical_winning(leagues, season_historical_matches):
+    teams_historical_winning = {}
+    league_season_team_agg = {}
+    # for every league
+    for l_name in leagues:
+        for season, matches in season_historical_matches.items():
+            league_season_teams = get_league_season_teams(l_name, season)
+            for team in league_season_teams:
+                league_season_team_agg[(l_name, team, season)] = [match for match in matches if (
+                        (Match[match.id].league.name == l_name) and (
+                         Match[match.id].home_team == team or Match[match.id].away_team == team))]
+
+    for (league_name, team, season), matches in league_season_team_agg.items():
+        total_games = len(matches)
+        if total_games != 0:
+            relevant_teams = get_league_season_teams(league_name, season)
+            list_per_winning = {}
+            for team_rival in relevant_teams:
+                if team_rival == team:
+                    continue
+                home_games_t1_t2 = len([1 for match in matches if
+                                        (Match[match.id].home_team == team and
+                                         Match[match.id].away_team == team_rival)])
+                if home_games_t1_t2 > 0:
+                    home_win_team_per = len([1 for match in matches if
+                                            (Match[match.id].home_team == team and Match[
+                                                match.id].away_team == team_rival and
+                                             Match[match.id].home_team_goal > Match[
+                                                match.id].away_team_goal)]) / home_games_t1_t2
+                else:
+                    home_win_team_per = 0
+                away_games_t1_t2 = len([1 for match in matches if
+                                        (Match[match.id].home_team == team_rival and
+                                         Match[match.id].away_team == team)])
+                if away_games_t1_t2 > 0:
+                    away_win_team_per = len([1 for match in matches if
+                                             (Match[match.id].home_team == team_rival and Match[
+                                                 match.id].away_team == team and Match[match.id].away_team_goal > Match[
+                                                    match.id].home_team_goal)]) / away_games_t1_t2
+                else:
+                    away_win_team_per = 0
+                avg_team_home_goal = np.mean(
+                    [match.home_team_goal for match in matches if
+                     Match[match.id].home_team == team and Match[match.id].away_team == team_rival])
+                avg_team_away_goal = np.mean(
+                    [match.away_team_goal for match in matches if
+                     Match[match.id].home_team == team_rival and Match[match.id].away_team == team])
+                avg_rival_home_goal = np.mean(
+                    [match.home_team_goal for match in matches if
+                     Match[match.id].home_team == team_rival and Match[match.id].away_team == team])
+                avg_rival_away_goal = np.mean(
+                    [match.away_team_goal for match in matches if
+                     Match[match.id].home_team == team and Match[match.id].away_team == team_rival])
+                list_per_winning[team_rival.team_id] = [home_win_team_per, away_win_team_per, avg_team_home_goal,
+                                                        avg_team_away_goal, avg_rival_home_goal, avg_rival_away_goal]
+
+            teams_historical_winning[(league_name, team.team_id, season)] = list_per_winning
+
+        else:
+            print(f'{team.name} DIVISION BY ZERO')
+            teams_historical_winning[(league_name, team.team_id, season)] = np.empty((299))
+            teams_historical_winning[(league_name, team.team_id, season)][:] = np.nan
+    return teams_historical_winning
 
 
 def main():
