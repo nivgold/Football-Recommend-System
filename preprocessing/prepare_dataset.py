@@ -1,6 +1,18 @@
 from feature_extraction import loader
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import StandardScaler
+
+FEATURES = ["HOME_H_WIN_PCT", "HOME_A_WIN_PCT", "HOME_H_DRAW_PCT", "HOME_A_DRAW_PCT", "HOME_H_GS_AVG",
+            "HOME_A_GS_AVG", "HOME_H_GC_AVG", "HOME_A_GC_AVG", "HOME_H_GS_STD", "HOME_A_GS_STD",
+            "HOME_H_GC_STD", "HOME_A_GC_STD",
+            "AWAY_H_WIN_PCT", "AWAY_A_WIN_PCT", "AWAY_H_DRAW_PCT", "AWAY_A_DRAW_PCT", "AWAY_H_GS_AVG",
+            "AWAY_A_GS_AVG", "AWAY_H_GC_AVG", "AWAY_A_GC_AVG", "AWAY_H_GS_STD", "AWAY_A_GS_STD",
+            "AWAY_H_GC_STD", "AWAY_A_GC_STD",
+            "HOME_WIN_PCT", "HOME_DRAW_PCT", "HOME_GS_AVG", "HOME_GC_AVG", "HOME_GS_STD", "HOME_GC_STD",
+            "AWAY_WIN_PCT", "AWAY_DRAW_PCT", "AWAY_GS_AVG", "AWAY_GC_AVG", "AWAY_GS_STD", "AWAY_GC_STD",
+            ]
+
 
 def make_dataset():
     all_team_historical = loader.load_team_historical()
@@ -26,31 +38,35 @@ def make_dataset():
             away_team_current_form = all_current_form[away_team_id][match_id]
             league_historical = all_league_historical[(league_name, season)]
             features_vector = list(home_team_historical) + list(away_team_historical) + list(
-                home_team_current_form) + list(away_team_current_form) + [result]
+                home_team_current_form) + list(away_team_current_form) + [season] + [result]
             league_dataset[match_id] = features_vector
-            columns = ["HOME_H_WIN_PCT", "HOME_A_WIN_PCT", "HOME_H_DRAW_PCT", "HOME_A_DRAW_PCT", "HOME_H_GS_AVG", "HOME_A_GS_AVG", "HOME_H_GC_AVG", "HOME_A_GC_AVG", "HOME_H_GS_STD", "HOME_A_GS_STD", "HOME_H_GC_STD", "HOME_A_GC_STD",
-                       "AWAY_H_WIN_PCT", "AWAY_A_WIN_PCT", "AWAY_H_DRAW_PCT", "AWAY_A_DRAW_PCT", "AWAY_H_GS_AVG", "AWAY_A_GS_AVG", "AWAY_H_GC_AVG", "AWAY_A_GC_AVG", "AWAY_H_GS_STD", "AWAY_A_GS_STD", "AWAY_H_GC_STD", "AWAY_A_GC_STD",
-                       "HOME_WIN_PCT", "HOME_DRAW_PCT", "HOME_GS_AVG", "HOME_GC_AVG", "HOME_GS_STD", "HOME_GC_STD",
-                       "AWAY_WIN_PCT", "AWAY_DRAW_PCT", "AWAY_GS_AVG", "AWAY_GC_AVG", "AWAY_GS_STD", "AWAY_GC_STD",
-                       "RESULT"]
+
         # converting dict to DataFrame
-        df = pd.DataFrame.from_dict(league_dataset, orient='index', columns=columns)
-        leagues_datasets[league_name] = df
+        df = pd.DataFrame.from_dict(league_dataset, orient='index', columns=FEATURES + ["SEASON", "RESULT"])
+        leagues_datasets[league_name] = df.reset_index(drop=True)
 
     return leagues_datasets
 
+
+def train_test_split(dataset_X, dataset_y):
+    test_idx = dataset_X.index[dataset_X['SEASON'] == '2015/2016'].tolist()
+    train_idx = list(set(dataset_X.index.tolist()) - set(test_idx))
+    return dataset_X.iloc[train_idx, 0:-1], dataset_y.iloc[train_idx], dataset_X.iloc[test_idx, 0:-1], dataset_y.iloc[
+        test_idx]
+
+
 def preprocess():
     leagues_datasets = make_dataset()
-
-
-
 
     for league_name, dataset in leagues_datasets.items():
         # fill NaN's
         dataset = dataset.fillna(dataset.mean())
 
-        X = dataset.iloc[:, 0:-1]
         # Standardization
-        scaler = StandardScaler().fit()
+        dataset[FEATURES] = StandardScaler().fit_transform(dataset[FEATURES])
+
+        X_train, y_train, X_test, y_test = train_test_split(dataset.iloc[:, 0:-1], dataset.iloc[:, -1])
+
+        leagues_datasets[league_name] = (X_train, y_train, X_test, y_test)
 
     return leagues_datasets
