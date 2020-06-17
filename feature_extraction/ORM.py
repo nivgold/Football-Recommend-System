@@ -51,6 +51,19 @@ def get_league_season_teams(league_name, season):
 
 
 @db_session
+def get_league_6_season_teams(league_name, season):
+    home_teams = list(select(m.home_team for m in Match if m.league.name == league_name and (
+            m.season == season or m.season == get_prev_k_season(season, 1) or m.season == get_prev_k_season(season, 2)
+            or m.season == get_prev_k_season(season, 3) or m.season == get_prev_k_season(season, 4)
+            or m.season == get_prev_k_season(season, 5))))
+    away_teams = list(select(m.away_team for m in Match if m.league.name == league_name and (
+            m.season == season or m.season == get_prev_k_season(season, 1) or m.season == get_prev_k_season(season, 2)
+            or m.season == get_prev_k_season(season, 3) or m.season == get_prev_k_season(season, 4)
+            or m.season == get_prev_k_season(season, 5))))
+    return list(set(home_teams + away_teams))
+
+
+@db_session
 def get_all_league_names():
     all_leagues = select(league.name for league in League)
     return list(all_leagues)
