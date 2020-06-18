@@ -63,7 +63,7 @@ def xgb_all_leagues():
     )
 
     eval_set = [(X_train, y_train), (X_test, y_test)]
-    model.fit(X_train, y_train, early_stopping_rounds=epochs * 0.005, eval_metric=["mlogloss"],
+    model.fit(X_train, y_train, early_stopping_rounds=epochs * 0.2, eval_metric=["mlogloss", "merror"],
               eval_set=eval_set, verbose=False)
 
     # retrieve performance metrics
@@ -73,11 +73,20 @@ def xgb_all_leagues():
 
     # plot classification error
     fig, ax = pyplot.subplots()
+    ax.plot(x_axis, results['validation_0']['merror'], label='Train')
+    ax.plot(x_axis, results['validation_1']['merror'], label='Test')
+    ax.legend()
+    pyplot.ylabel('Classification Error')
+    pyplot.title('State-of-The-Art XGBoost Classification Error')
+    pyplot.show()
+
+    # plot classification error
+    fig, ax = pyplot.subplots()
     ax.plot(x_axis, results['validation_0']['mlogloss'], label='Train')
     ax.plot(x_axis, results['validation_1']['mlogloss'], label='Test')
     ax.legend()
     pyplot.ylabel('Classification Log Loss')
-    pyplot.title('XGBoost Classification Log Loss')
+    pyplot.title('State-of-The-Art XGBoost Classification Log Loss')
     pyplot.show()
 
     # get train predictions
