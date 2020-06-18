@@ -76,8 +76,8 @@ def xgb_all_leagues():
     ax.plot(x_axis, results['validation_0']['mlogloss'], label='Train')
     ax.plot(x_axis, results['validation_1']['mlogloss'], label='Test')
     ax.legend()
-    pyplot.ylabel('Classification Error')
-    pyplot.title('XGBoost Classification Error')
+    pyplot.ylabel('Classification Log Loss')
+    pyplot.title('XGBoost Classification Log Loss')
     pyplot.show()
 
     # get train predictions
