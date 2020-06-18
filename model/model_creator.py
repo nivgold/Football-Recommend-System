@@ -90,8 +90,8 @@ def xgb_all_leagues():
 
     # calculate train and test accuracies
     accuracy = accuracy_score(y_test, predictions)
-    print("TRAIN acc: %.2f%%" % (accuracy_score(y_train, train_predictions) * 100.0))
-    print("TEST acc: %.2f%%" % (accuracy * 100.0))
+    print("TRAIN Accuracy: %.2f%%" % (accuracy_score(y_train, train_predictions) * 100.0))
+    print("TEST Accuracy: %.2f%%" % (accuracy * 100.0))
 
     # plotting confusion matrix
     plot_cm(y_test, predictions)
@@ -131,8 +131,8 @@ def xgb_each_league():
         train_accuracy = accuracy_score(y_train, train_predictions) * 100.0
         test_accuracy = accuracy_score(y_test, predictions) * 100.0
         print(f'\n\n{league_name}')
-        print("TRAIN acc: %.2f%%" % (train_accuracy))
-        print("TEST acc: %.2f%%" % (test_accuracy))
+        print("TRAIN Accuracy: %.2f%%" % (train_accuracy))
+        print("TEST Accuracy: %.2f%%" % (test_accuracy))
 
         leagues_models[league_name] = (train_accuracy, test_accuracy)
 
