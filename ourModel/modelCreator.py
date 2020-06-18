@@ -1,10 +1,50 @@
 import ourModel.prepare_dataset as prepare
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import itertools
 from sklearn.model_selection import GridSearchCV
 from xgboost import plot_importance
 from matplotlib import pyplot
 import numpy as np
 import xgboost
+
+
+def get_labeled_class(y_test, predictions):
+    y_test_labels = ["Draw" if val == 0 else "Win" if val == 1 else "Loss" for val in y_test]
+    predictions_labels = ["Draw" if val == 0 else "Win" if val == 1 else "Loss" for val in predictions]
+    return y_test_labels, predictions_labels
+
+
+def print_classification_table(y_test, predictions):
+    target_names = ["Draw", "Win", "Loss"]
+    y_test, predictions = get_labeled_class(y_test, predictions)
+    print(classification_report(y_test, predictions, target_names=target_names))
+
+
+def plot_cm(y_test, predictions, normalize=True):
+    labels = ["Draw", "Win", "Loss"]
+    y_test, predictions = get_labeled_class(y_test, predictions)
+    cm = confusion_matrix(y_test, predictions, labels=labels)
+
+    if normalize == True:
+        cm = cm.astype('float') / cm.sum()
+
+    pyplot.imshow(cm, interpolation='nearest', cmap=pyplot.cm.Greens)
+    pyplot.colorbar()
+    tick_marks = np.arange(len(labels))
+    pyplot.xticks(tick_marks, labels, rotation=45)
+    pyplot.yticks(tick_marks, labels)
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        pyplot.text(j, i, round(cm[i, j], 2),
+                    horizontalalignment="center",
+                    color="white" if cm[i, j] > thresh else "black")
+    pyplot.title("Confusion Matrix of Our XGBoost Model")
+    pyplot.tight_layout()
+    pyplot.ylabel('True label')
+    pyplot.xlabel('Predicted label')
+
+    pyplot.show()
+
 
 leagues_datasets = prepare.preprocess()
 
@@ -21,8 +61,8 @@ model = xgboost.XGBClassifier(
 
 eval_set = [(X_train, y_train), (X_test, y_test)]
 
-
-model.fit(X_train, y_train, early_stopping_rounds=epochs*0.1, eval_metric=["merror", "mlogloss"], eval_set=eval_set, verbose=False)
+model.fit(X_train, y_train, early_stopping_rounds=epochs * 0.1, eval_metric=["merror", "mlogloss"], eval_set=eval_set,
+          verbose=False)
 
 # predictions
 y_train_pred = model.predict(X_train)
@@ -64,3 +104,9 @@ pyplot.show()
 # feature importance:
 plot_importance(model)
 pyplot.show()
+
+# confusion matrix:
+plot_cm(y_test, predictions)
+
+# print precision recall f1 support table
+print_classification_table(y_test, predictions)
